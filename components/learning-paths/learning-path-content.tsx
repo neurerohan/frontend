@@ -12,10 +12,15 @@ interface LearningPathContentProps {
     outcomes: string[]
     jobOpportunities: string[]
     avgSalary: string
+    steps: any[]
   }
 }
 
 export function LearningPathContent({ path }: LearningPathContentProps) {
+  if (!path) {
+    return <div>Loading path details...</div>;
+  }
+
   return (
     <div className="space-y-8">
       <Card>
@@ -64,13 +69,13 @@ export function LearningPathContent({ path }: LearningPathContentProps) {
           <TabsTrigger value="discussion">Discussion</TabsTrigger>
         </TabsList>
         <TabsContent value="steps" className="space-y-4">
-          <PathSteps />
+          <PathSteps steps={path.steps} />
         </TabsContent>
         <TabsContent value="resources" className="space-y-4">
-          <PathResources />
+          <PathResources pathId={path.title} />
         </TabsContent>
         <TabsContent value="discussion" className="space-y-4">
-          <PathDiscussion />
+          <PathDiscussion pathId={path.title} />
         </TabsContent>
       </Tabs>
     </div>
