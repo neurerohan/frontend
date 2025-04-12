@@ -1,191 +1,167 @@
 "use client"
 
-import type React from "react"
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import Link from "next/link"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Loader2, AlertCircle } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { api } from "@/lib/api"
 
+const registerSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters").max(50),
+  email: z.string().email("Invalid email address"),
+  firstName: z.string().min(1, "First name is required").max(50),
+  lastName: z.string().min(1, "Last name is required").max(50),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+})
+
+type RegisterFormValues = z.infer<typeof registerSchema>
+
 export function RegisterForm() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    terms: false,
-  })
   const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }))
-  }
+  const form = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      firstName: "",
+      lastName: "",
+      password: "",
+    },
+  })
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setIsLoading(true)
+  const onSubmit = async (values: RegisterFormValues) => {
     setError(null)
-
-    // Validate passwords match
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords don't match")
-      setIsLoading(false)
-      return
-    }
+    setIsLoading(true)
 
     try {
-      // Register user
-      await api.post("/register/", {
-        username: `${formData.firstName.toLowerCase()}_${formData.lastName.toLowerCase()}`,
-        email: formData.email,
-        password: formData.password,
-        password2: formData.confirmPassword,
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-      })
+      // Map frontend field names to backend expected names if different
+      // Your backend expects: email, username, password, first_name, last_name
+      const backendData = {
+        username: values.username,
+        email: values.email,
+        password: values.password,
+        first_name: values.firstName,
+        last_name: values.lastName,
+      }
+      
+      await api.post('/users/register/', backendData);
+      
+      // Registration successful, redirect to login
+      router.push('/auth/login?registered=true'); // Add a query param to show a success message on login page
 
-      // Redirect to login page
-      router.push("/auth/login?registered=true")
-    } catch (error: any) {
-      console.error("Registration error:", error)
-      setError(error.message || "Registration failed. Please try again.")
-      setIsLoading(false)
+    } catch (err: any) {
+      console.error("Registration failed:", err);
+      // Try to parse specific error message from backend
+      const errorMessage = err?.response?.data?.detail || err?.message || 'An unexpected error occurred during registration.';
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="firstName">First name</Label>
-            <Input
-              id="firstName"
-              name="firstName"
-              placeholder="John"
-              required
-              disabled={isLoading}
-              value={formData.firstName}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="lastName">Last name</Label>
-            <Input
-              id="lastName"
-              name="lastName"
-              placeholder="Doe"
-              required
-              disabled={isLoading}
-              value={formData.lastName}
-              onChange={handleChange}
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="m@example.com"
-            required
-            disabled={isLoading}
-            value={formData.email}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            required
-            disabled={isLoading}
-            value={formData.password}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm password</Label>
-          <Input
-            id="confirmPassword"
-            name="confirmPassword"
-            type="password"
-            required
-            disabled={isLoading}
-            value={formData.confirmPassword}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="terms"
-            name="terms"
-            required
-            checked={formData.terms}
-            onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, terms: checked === true }))}
-          />
-          <Label htmlFor="terms" className="text-sm font-normal">
-            I agree to the{" "}
-            <a href="/terms" className="text-primary hover:underline">
-              terms of service
-            </a>{" "}
-            and{" "}
-            <a href="/privacy" className="text-primary hover:underline">
-              privacy policy
-            </a>
-          </Label>
-        </div>
-      </div>
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Creating account...
-          </>
-        ) : (
-          "Create account"
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {error && (
+          <Alert variant="destructive">
+            <AlertTitle>Registration Failed</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
-      </Button>
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
+        <div className="grid grid-cols-2 gap-4">
+            <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>First Name</FormLabel>
+                    <FormControl>
+                        <Input placeholder="Ram" {...field} disabled={isLoading} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                        <Input placeholder="Bahadur" {...field} disabled={isLoading} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
         </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 gap-2">
-        <Button
-          variant="outline"
-          type="button"
-          disabled={isLoading}
-          onClick={() => router.push("/api/auth/signin/google")}
-        >
-          Google
+         <FormField
+          control={form.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username</FormLabel>
+              <FormControl>
+                <Input placeholder="rambahadur" {...field} disabled={isLoading} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input placeholder="ram@example.com" {...field} disabled={isLoading} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="********" {...field} disabled={isLoading} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? 'Creating Account...' : 'Create Account'}
         </Button>
-      </div>
-    </form>
+         <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+            Already have an account?{" "}
+            <Link href="/auth/login" className="font-medium text-primary hover:underline">
+              Sign in
+            </Link>
+          </div>
+      </form>
+    </Form>
   )
 }

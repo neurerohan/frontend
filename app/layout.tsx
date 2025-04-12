@@ -1,9 +1,11 @@
 // app/layout.tsx
 import type { Metadata } from "next";
 import { Inter, Mukta } from "next/font/google";
-import { Providers } from "@/components/providers"; // Assuming this wraps context providers if needed
+import { AuthProvider } from "@/components/auth/auth-provider";
+import { SessionErrorHandler } from "@/components/auth/session-error-handler";
+import { ThemeProvider } from "@/components/theme-provider";
 import "@/styles/globals.css";
-import { cn } from "@/lib/utils"; // Assuming you have this utility from Shadcn
+import { cn } from "@/lib/utils";
 
 const fontSans = Inter({
   subsets: ["latin"],
@@ -11,15 +13,14 @@ const fontSans = Inter({
 });
 
 const fontMukta = Mukta({
-  subsets: ["latin", "devanagari"], // Include devanagari subset
-  weight: ["400", "700"], // Adjust weights as needed
+  subsets: ["latin", "devanagari"],
+  weight: ["400", "700"],
   variable: "--font-mukta",
 });
 
 export const metadata: Metadata = {
-  title: "Nyure Education",
-  description: "Your Learning Journey Starts Here | Nyure Education Nepal",
-  // Add more SEO metadata here (icons, open graph, etc.)
+  title: "Course Compass Nepal - Your Learning Journey",
+  description: "Your Learning Journey Starts Here | Course Compass Nepal",
 };
 
 export default function RootLayout({
@@ -31,16 +32,22 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
-          "min-h-screen bg-background font-sans antialiased", // Use font-sans by default
+          "min-h-screen bg-background font-sans antialiased",
           fontSans.variable,
-          fontMukta.variable // Make Mukta available via CSS variable if needed elsewhere
+          fontMukta.variable
         )}
       >
-        <Providers>
-          {/* <Providers> You might wrap children with other global providers here */}
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <SessionErrorHandler />
             {children}
-          {/* </Providers> */}
-        </Providers>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

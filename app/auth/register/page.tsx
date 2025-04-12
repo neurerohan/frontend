@@ -4,25 +4,15 @@ import { RegisterForm } from "@/components/auth/register-form"
 
 export default function RegisterPage() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-        <Link href="/" className="mb-8 flex items-center space-x-2">
-          <Compass className="h-8 w-8" />
-          <span className="text-2xl font-bold">Course Compass</span>
-        </Link>
-        <div className="w-full max-w-md space-y-8">
-          <div className="space-y-2 text-center">
-            <h1 className="text-3xl font-bold">Create an account</h1>
-            <p className="text-muted-foreground">Enter your information to get started</p>
-          </div>
-          <RegisterForm />
-          <div className="text-center text-sm">
-            Already have an account?{" "}
-            <Link href="/auth/login" className="font-medium text-primary hover:underline">
-              Sign in
-            </Link>
-          </div>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 dark:bg-gray-950 p-4">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">Create Account</h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Start your learning journey with Course Compass Nepal.
+          </p>
         </div>
+        <RegisterForm />
       </div>
     </div>
   )
