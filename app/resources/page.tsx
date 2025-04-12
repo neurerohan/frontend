@@ -30,7 +30,6 @@ interface Resource {
 export default function ResourcesPage() {
   const { data: session, status } = useSession();
   const isAuthenticated = status === "authenticated";
-  // State for resources, loading, error
   const [resources, setResources] = useState<Resource[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,42 +38,65 @@ export default function ResourcesPage() {
     const fetchResources = async () => {
        setIsLoading(true);
        setError(null);
+       let fetchedData: any;
        try {
           const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/resources/`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
             cache: 'no-store',
           });
-          if (!res.ok) throw new Error(`Failed to fetch resources (status: ${res.status})`);
-          const data = await res.json();
-          setResources(Array.isArray(data) ? data : data.results || []);
+          
+          if (!res.ok) { 
+             let errorMsg = `Failed to fetch resources (status: ${res.status})`;
+             try {
+                const errorData = await res.json();
+                errorMsg = errorData?.detail || errorData?.message || errorMsg;
+             } catch (parseError) {
+                 console.warn("Could not parse error response body.");
+             }
+             throw new Error(errorMsg); 
+          }
+
+          fetchedData = await res.json();
+
+          const resourceList = Array.isArray(fetchedData) 
+                                ? fetchedData 
+                                : (fetchedData && Array.isArray(fetchedData.results)) 
+                                    ? fetchedData.results 
+                                    : null;
+          
+          if (resourceList === null) {
+             console.warn("Unexpected API response structure for resources:", fetchedData);
+             throw new Error("Received unexpected data structure from API.");
+          }
+
+          setResources(resourceList);
+
        } catch (err: any) {
          console.error("Error fetching resources:", err);
          setError(err.message || "An unknown error occurred while fetching resources.");
+         setResources(null);
        } finally {
          setIsLoading(false);
        }
     };
+
     fetchResources();
-  }, []); // Fetch on mount
+
+  }, []);
 
   const handleBookmark = (resourceId: number) => {
      if (!isAuthenticated) { alert("Please log in to bookmark resources."); return; }
      console.log(`User ${session?.user?.id} toggling bookmark for resource ${resourceId}`);
-     // Placeholder for API: POST /api/resources/{id}/bookmark/ with { bookmark: true/false }
      alert("Bookmark functionality not implemented yet.");
-     // Need to update UI state based on response
   };
 
   const handleRate = (resourceId: number) => {
      if (!isAuthenticated) { alert("Please log in to rate resources."); return; }
      console.log(`User ${session?.user?.id} rating resource ${resourceId}`);
-     // Placeholder for API: POST /api/resources/{id}/rate/ with { rating: 1-5 }
-     // Would likely involve a modal or rating component
      alert("Rating functionality not implemented yet.");
   };
 
-  // Loading State
   if (isLoading) {
      return (
         <div className="flex min-h-screen flex-col">
@@ -90,7 +112,6 @@ export default function ResourcesPage() {
      );
   }
 
-  // Error State
   if (error) {
      return (
       <div className="flex min-h-screen flex-col">
@@ -106,7 +127,6 @@ export default function ResourcesPage() {
      );
   }
 
-  // Success State (including empty list)
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
@@ -120,34 +140,34 @@ export default function ResourcesPage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {resources?.map((resource) => (
             <Card key={resource.id} className="flex flex-col">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">
-                     <Link href={resource.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                       {resource.title}
-                       <ExternalLink className="inline-block h-4 w-4 ml-1 align-middle"/>
-                     </Link>
-                  </CardTitle>
-                  <Badge variant={resource.is_free ? "secondary" : "outline"}>
-                    {resource.is_free ? "Free" : "Paid"}
-                  </Badge>
-                </div>
-                <CardDescription className="line-clamp-2 h-10">{resource.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2 flex-grow">
-                <div className="text-sm text-muted-foreground">
-                  <span>Type: {resource.resource_type?.name || 'N/A'}</span> | 
-                  <span> Provider: {resource.provider?.name || 'N/A'}</span> | 
-                  <span> Difficulty: {resource.difficulty || 'N/A'}</span>
-                </div>
-                {resource.skills && resource.skills.length > 0 && (
-                   <div className="flex flex-wrap gap-1">
-                    {resource.skills.map(skill => (
-                      <Badge key={skill.name} variant="outline">{skill.name}</Badge>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
+               <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-lg">
+                        <Link href={resource.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                        {resource.title}
+                        <ExternalLink className="inline-block h-4 w-4 ml-1 align-middle"/>
+                        </Link>
+                    </CardTitle>
+                    <Badge variant={resource.is_free ? "secondary" : "outline"}>
+                        {resource.is_free ? "Free" : "Paid"}
+                    </Badge>
+                    </div>
+                 <CardDescription className="line-clamp-2 h-10">{resource.description}</CardDescription>
+               </CardHeader>
+               <CardContent className="space-y-2 flex-grow">
+                  <div className="text-sm text-muted-foreground">
+                    <span>Type: {resource.resource_type?.name || 'N/A'}</span> | 
+                    <span> Provider: {resource.provider?.name || 'N/A'}</span> | 
+                    <span> Difficulty: {resource.difficulty || 'N/A'}</span>
+                    </div>
+                  {resource.skills && resource.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                        {resource.skills.map(skill => (
+                        <Badge key={skill.name} variant="outline">{skill.name}</Badge>
+                        ))}
+                    </div>
+                    )}
+               </CardContent>
               <CardFooter className="border-t pt-4 mt-auto">
                  <div className="flex justify-end space-x-2 w-full">
                      <Button 
@@ -179,7 +199,6 @@ export default function ResourcesPage() {
   );
 }
 
-// Skeleton for individual resource card
 function ResourceCardSkeleton() {
     return (
         <Card>
