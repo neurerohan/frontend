@@ -1,10 +1,34 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { Suspense } from "react"
 import { LoginForm } from "@/components/auth/login-form"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
 
 export const metadata: Metadata = {
   title: "Login - Course Compass",
   description: "Login to your Course Compass account",
+}
+
+function LoginFormSkeleton() {
+    return (
+        <Card>
+            <CardContent className="space-y-4 pt-6">
+                <Skeleton className="h-10 w-full" />
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+            </CardContent>
+            <CardFooter>
+                <Skeleton className="h-10 w-full" />
+            </CardFooter>
+        </Card>
+    );
 }
 
 export default function LoginPage() {
@@ -15,7 +39,9 @@ export default function LoginPage() {
           <h1 className="text-3xl font-bold">Welcome back</h1>
           <p className="text-gray-500 dark:text-gray-400">Enter your credentials to access your account</p>
         </div>
-        <LoginForm />
+        <Suspense fallback={<LoginFormSkeleton />}>
+          <LoginForm />
+        </Suspense>
         <div className="text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Don&apos;t have an account?{" "}
