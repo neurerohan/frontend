@@ -38,6 +38,32 @@ const paths = [
       name: "Course Compass Nepal Team",
       avatar: "/placeholder.svg?height=50&width=50",
     },
+    steps: [
+      {
+        id: 1,
+        title: "Introduction to HTML",
+        description: "Learn the basics of HTML structure.",
+        type: "lesson",
+        duration: 30,
+        status: "not_started",
+      },
+      {
+        id: 2,
+        title: "Basic CSS Styling",
+        description: "Understand how to style HTML elements.",
+        type: "lesson",
+        duration: 45,
+        status: "not_started",
+      },
+       {
+        id: 3,
+        title: "First Project: Simple Web Page",
+        description: "Build a basic web page using HTML and CSS.",
+        type: "project",
+        duration: 120,
+        status: "not_started",
+      },
+    ],
   },
   // More paths would be defined here
 ]
