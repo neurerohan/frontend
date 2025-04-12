@@ -1,3 +1,5 @@
+'use client'
+
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -25,8 +27,6 @@ interface Resource {
 }
 
 // Make ResourcesPage a client component to use hooks
-'use client'
-
 export default function ResourcesPage() {
   const { data: session, status } = useSession();
   const isAuthenticated = status === "authenticated";
