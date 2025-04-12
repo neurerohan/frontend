@@ -11,7 +11,7 @@ const nextConfig = {
     ],
   },
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || "https://ed.nyure.com.np/api",
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || "https://ed.nyure.com.np",
   },
   // Enable SWC minification for faster builds
   swcMinify: true,
