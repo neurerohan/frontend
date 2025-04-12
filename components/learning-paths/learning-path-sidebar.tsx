@@ -4,9 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { Clock, CheckCircle2, Users, Trophy } from "lucide-react"
+import { useSession } from "next-auth/react"
 
 interface LearningPathSidebarProps {
   path: {
+    id: number
     duration: string
     enrolledCount: number
     creator: {
@@ -17,6 +19,29 @@ interface LearningPathSidebarProps {
 }
 
 export function LearningPathSidebar({ path }: LearningPathSidebarProps) {
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === "authenticated";
+
+  const handleEnroll = async () => {
+      if (!isAuthenticated) {
+         // Redirect to login or show message
+         console.log("User not authenticated. Redirecting to login...");
+         // router.push('/auth/login?callbackUrl=/learn/' + path.slug);
+         return;
+      }
+      console.log(`Attempting to enroll user ${session?.user?.id} in path ID: ${path.id}`);
+       // Placeholder for API call: POST /api/learning-paths/{id}/enroll/
+       try {
+        // const response = await api.post(`/learning-paths/${path.id}/enroll/`);
+         // console.log("Enrollment successful:", response);
+         // Update UI state (e.g., change button text)
+         alert("Enrollment feature not fully implemented yet.");
+       } catch (error) {
+         console.error("Enrollment failed:", error);
+         alert("Enrollment failed. See console for details.");
+       }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -66,7 +91,10 @@ export function LearningPathSidebar({ path }: LearningPathSidebarProps) {
               </div>
             </div>
           </div>
-          <Button className="w-full">Enroll Now - Free</Button>
+          <Button className="w-full" onClick={handleEnroll} disabled={status === 'loading'}>
+             {isAuthenticated ? "Enroll Now - Free" : "Log in to Enroll"} 
+             {/* // Add logic here to show "Enrolled" or progress if user is already enrolled */}
+          </Button>
         </CardContent>
       </Card>
 

@@ -6,6 +6,9 @@ import { LearningPathHero } from "@/components/learning-paths/learning-path-hero
 import { LearningPathContent } from "@/components/learning-paths/learning-path-content"
 import { LearningPathSidebar } from "@/components/learning-paths/learning-path-sidebar"
 import { api } from "@/lib/api" // Import the api utility
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 // Define the expected shape of the learning path data from the API
 // Adjust this based on the actual API response structure
@@ -33,45 +36,39 @@ interface LearningPath {
   // Add other fields returned by the API as needed
 }
 
-// Helper function to fetch path data (can be reused by generateMetadata and page)
-async function getLearningPath(slug: string): Promise<LearningPath | null> {
+// Updated function to return data/error
+async function getLearningPath(slug: string): Promise<{ data: LearningPath | null; error: string | null }> {
   try {
-    // Note: fetchAPI automatically adds the base URL
-    // It doesn't include auth token here as it's called server-side.
-    // If the endpoint requires auth, we'd need to pass the token manually.
-    // Assuming /api/learning-paths/{slug}/ is public for now.
-    const pathData = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/learning-paths/${slug}/`, {
+    const pathDataRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/learning-paths/${slug}/`, {
        method: 'GET',
        headers: { 'Content-Type': 'application/json' },
-       // Important: Use cache control for Server Components fetching
-       cache: 'no-store', // Or 'force-cache', 'revalidate' based on needs
+       cache: 'no-store',
      });
 
-     if (!pathData.ok) {
-        if (pathData.status === 404) {
-          return null; // Not found
+     if (!pathDataRes.ok) {
+        if (pathDataRes.status === 404) {
+          // Specific handling for 404 is done via notFound() in the component
+          return { data: null, error: 'Not Found' }; 
         }
-        // Handle other errors if needed
-        console.error(`API Error fetching path ${slug}: ${pathData.status}`);
-        throw new Error(`Failed to fetch path data`);
+        console.error(`API Error fetching path ${slug}: ${pathDataRes.status}`);
+        return { data: null, error: `Failed to fetch learning path (status: ${pathDataRes.status})` };
      }
 
-     return await pathData.json();
+     const pathData = await pathDataRes.json();
+     return { data: pathData, error: null };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error fetching learning path ${slug}:`, error);
-    // Depending on error handling strategy, you might re-throw or return null
-    return null; // Return null on error
+    return { data: null, error: error.message || "An unknown error occurred while fetching the learning path." }; 
   }
 }
-
 
 type Props = {
   params: { slug: string }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-   const path = await getLearningPath(params.slug);
+   const { data: path, error } = await getLearningPath(params.slug);
 
   if (!path) {
     return {
@@ -118,11 +115,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // The actual page component is now async
 export default async function LearningPathPage({ params }: Props) {
-  const path = await getLearningPath(params.slug);
+  const { data: path, error } = await getLearningPath(params.slug);
 
-  // Handle case where path data couldn't be fetched
+  // Handle Not Found specifically
+  if (error === 'Not Found') {
+    notFound();
+  }
+
+  // Handle other errors
+  if (error) {
+      return (
+        <div className="flex min-h-screen flex-col">
+            <SiteHeader />
+            <main className="flex-1 container flex items-center justify-center px-4 py-8 md:px-6 md:py-12">
+                <Alert variant="destructive" className="max-w-lg">
+                    <AlertTitle>Error Loading Learning Path</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            </main>
+            <SiteFooter />
+        </div>
+        );
+  }
+  
+   // Handle loading state (although unlikely to be seen in RSC unless fetch is slow)
   if (!path) {
-    notFound(); // Triggers the not-found page
+       // Render a skeleton or loading indicator if path is null but no error (e.g., fetch in progress)
+       // This state might be brief in RSC, but good practice for potential future changes.
+       return <LearningPathPageSkeleton />; 
   }
 
   // Structured data for SEO - Use fetched data
@@ -166,4 +186,90 @@ export default async function LearningPathPage({ params }: Props) {
       <SiteFooter />
     </div>
   )
+}
+
+// Skeleton for the entire page
+function LearningPathPageSkeleton() {
+    return (
+         <div className="flex min-h-screen flex-col">
+            <SiteHeader />
+            <main className="flex-1">
+                {/* Hero Skeleton */}
+                 <section className="w-full bg-gray-100 dark:bg-gray-800">
+                     <div className="container px-4 py-8 md:px-6 md:py-12 space-y-4">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <Skeleton className="h-6 w-24" />
+                            <Skeleton className="h-6 w-20" />
+                        </div>
+                         <Skeleton className="h-10 w-3/4" />
+                         <Skeleton className="h-5 w-full" />
+                         <Skeleton className="h-5 w-5/6" />
+                         <div className="flex flex-wrap gap-2">
+                             <Skeleton className="h-6 w-16" />
+                             <Skeleton className="h-6 w-20" />
+                             <Skeleton className="h-6 w-24" />
+                         </div>
+                     </div>
+                     <Skeleton className="relative w-full h-[200px] md:h-[300px] bg-gray-200 dark:bg-gray-700" />
+                </section>
+                {/* Content Skeleton */}
+                 <div className="container px-4 py-8 md:px-6 md:py-12">
+                     <div className="grid gap-8 md:grid-cols-[2fr_1fr]">
+                        {/* Left Column Skeleton */}
+                         <div className="space-y-8">
+                            <Card>
+                                <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>
+                                <CardContent className="space-y-4">
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-5/6" />
+                                     <div className="space-y-4 mt-6">
+                                         {[...Array(3)].map((_, i) => (
+                                            <div key={i}>
+                                                <Skeleton className="h-5 w-32 mb-2" />
+                                                <Skeleton className="h-4 w-full mb-1" />
+                                                <Skeleton className="h-4 w-5/6 mb-1" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            {/* Tabs Skeleton */}
+                             <Skeleton className="h-10 w-full rounded-md" />
+                             <Skeleton className="h-40 w-full rounded-md" />
+                         </div>
+                         {/* Right Column (Sidebar) Skeleton */}
+                        <div className="space-y-6">
+                             <Card>
+                                 <CardHeader><Skeleton className="h-6 w-36" /></CardHeader>
+                                 <CardContent className="space-y-4">
+                                     <div className="grid grid-cols-2 gap-4">
+                                         {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-16 w-full"/>)}
+                                     </div>
+                                     <Skeleton className="h-px w-full"/>
+                                     <div className="flex items-center gap-2">
+                                         <Skeleton className="h-8 w-8 rounded-full" />
+                                         <div className="space-y-1"><Skeleton className="h-4 w-24"/><Skeleton className="h-3 w-16"/></div>
+                                     </div>
+                                     <Skeleton className="h-10 w-full"/>
+                                 </CardContent>
+                             </Card>
+                              <Card>
+                                  <CardHeader><Skeleton className="h-6 w-40" /></CardHeader>
+                                  <CardContent className="space-y-4">
+                                     {[...Array(4)].map((_, i) => (
+                                        <div key={i} className="space-y-2">
+                                            <div className="flex justify-between"><Skeleton className="h-4 w-20"/><Skeleton className="h-4 w-12"/></div>
+                                            <Skeleton className="h-2 w-full"/>
+                                        </div>
+                                    ))}
+                                  </CardContent>
+                              </Card>
+                         </div>
+                     </div>
+                 </div>
+             </main>
+             <SiteFooter />
+         </div>
+     );
 }

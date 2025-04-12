@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle, Circle, Clock, FileText, Play, Code } from "lucide-react"
+import { useSession } from "next-auth/react"
 
 interface Step {
   id: number
@@ -18,6 +19,40 @@ interface PathStepsProps {
 }
 
 export function PathSteps({ steps }: PathStepsProps) {
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === "authenticated";
+
+  const handleStepAction = (stepId: number, currentStatus: string) => {
+     if (!isAuthenticated) {
+         console.log("User not authenticated. Redirecting to login...");
+         // router.push('/auth/login');
+         return;
+     }
+     
+     const action = currentStatus === "completed" ? "Review" : currentStatus === "in_progress" ? "Continue" : "Start";
+     console.log(`${action} step ID: ${stepId} for user ${session?.user?.id}`);
+
+     if (action === "Start" || action === "Continue") {
+         // Placeholder for API call to mark step complete/in-progress
+         // This needs coordination with backend API design
+         // e.g., POST /api/user-learning-paths/steps/complete/ or similar
+         console.log(`Placeholder: API call to update step ${stepId} status...`);
+         alert("Step completion/tracking not fully implemented yet.");
+         // Potentially navigate to the step content page:
+         // router.push(`/dashboard/learning-paths/${pathId}/steps/${stepId}`)
+     } else { // Review action
+         // Potentially navigate to the step content page for review:
+         // router.push(`/dashboard/learning-paths/${pathId}/steps/${stepId}`)
+         alert("Step review navigation not fully implemented yet.");
+     }
+
+  };
+
+  // Add check for empty steps array
+  if (!steps || steps.length === 0) {
+      return <p className="text-muted-foreground">No steps defined for this path yet.</p>;
+  }
+
   return (
     <div className="space-y-4">
       {steps.map((step, index) => (
@@ -71,13 +106,12 @@ export function PathSteps({ steps }: PathStepsProps) {
               variant={step.status === "completed" ? "outline" : "default"}
               size="sm"
               className="w-full sm:w-auto"
-              asChild
+              onClick={() => handleStepAction(step.id, step.status)}
+              disabled={status === 'loading'}
             >
-              <Link href={`/dashboard/learning-paths/1/steps/${step.id}`}>
-                {step.status === "completed" && "Review"}
-                {step.status === "in_progress" && "Continue"}
-                {step.status === "not_started" && "Start"}
-              </Link>
+              {step.status === "completed" && "Review"}
+              {step.status === "in_progress" && "Continue"}
+              {step.status === "not_started" && "Start"}
             </Button>
           </CardFooter>
         </Card>

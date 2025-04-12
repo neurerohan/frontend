@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
 import { Loader2 } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import Link from "next/link"
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -27,7 +28,19 @@ export function LoginForm() {
   const callbackUrl = searchParams?.get("callbackUrl") || "/dashboard"
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
+  const [generalMessage, setGeneralMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const errorParam = searchParams?.get('error');
+    const registeredParam = searchParams?.get('registered');
+
+    if (errorParam === 'SessionExpired') {
+      setGeneralMessage('Your session has expired. Please log in again.');
+    } else if (registeredParam === 'true') {
+      setGeneralMessage('Registration successful! Please log in.');
+    }
+  }, [searchParams, router]);
 
   const {
     register,
@@ -42,10 +55,11 @@ export function LoginForm() {
   })
 
   async function onSubmit(data: LoginFormValues) {
-    try {
-      setIsLoading(true)
-      setError(null)
+    setIsLoading(true)
+    setFormError(null)
+    setGeneralMessage(null)
 
+    try {
       const result = await signIn("credentials", {
         email: data.email,
         password: data.password,
@@ -54,7 +68,7 @@ export function LoginForm() {
 
       if (result?.error) {
         console.error("Login error:", result.error)
-        setError("Invalid email or password. Please try again.")
+        setFormError("Invalid email or password. Please try again.")
         return
       }
 
@@ -63,14 +77,13 @@ export function LoginForm() {
           title: "Success",
           description: "You have been logged in successfully.",
         })
-        router.push(callbackUrl)
-        router.refresh()
+        router.replace(callbackUrl)
       } else {
-        setError("An unexpected error occurred. Please try again.")
+        setFormError("An unexpected error occurred during login. Please try again.")
       }
     } catch (error) {
-      console.error("Login error:", error)
-      setError("An unexpected error occurred. Please try again later.")
+      console.error("Login submission error:", error)
+      setFormError("An unexpected error occurred. Please check your connection and try again.")
     } finally {
       setIsLoading(false)
     }
@@ -80,9 +93,15 @@ export function LoginForm() {
     <Card>
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4 pt-6">
-          {error && (
+          {generalMessage && (
+            <Alert variant="default">
+              <AlertDescription>{generalMessage}</AlertDescription>
+            </Alert>
+          )}
+
+          {formError && (
             <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>{formError}</AlertDescription>
             </Alert>
           )}
 
@@ -100,9 +119,6 @@ export function LoginForm() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Password</Label>
-              <Button variant="link" className="p-0 h-auto text-sm" asChild>
-                <a href="/auth/forgot-password">Forgot password?</a>
-              </Button>
             </div>
             <Input
               id="password"
@@ -119,6 +135,12 @@ export function LoginForm() {
             {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Sign In
           </Button>
+          <p className="text-center text-sm text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <Link href="/auth/register" className="font-medium underline text-primary hover:text-primary/80">
+              Sign up
+            </Link>
+          </p>
         </CardFooter>
       </form>
     </Card>

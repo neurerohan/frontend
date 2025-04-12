@@ -1,3 +1,5 @@
+'use client' // Add this directive
+
 import { SiteHeader } from "@/components/layout/site-header"; // Assuming this component exists
 import { SiteFooter } from "@/components/layout/site-footer"; // Assuming this component exists
 import { Button } from "@/components/ui/button"; // Import Button

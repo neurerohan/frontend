@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { api } from "@/lib/api" // Use the client-side fetcher
+import { useRouter } from 'next/navigation'
 
 // Define profile structure based on backend description
 interface UserProfile {
@@ -28,6 +29,7 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { data: session, status } = useSession();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -85,6 +87,12 @@ export default function ProfilePage() {
     );
   }
 
+  const handleEditProfile = () => {
+      console.log("Navigating to edit profile page (not implemented yet)");
+      // router.push('/dashboard/profile/edit'); 
+      alert("Edit profile page/feature not implemented yet.");
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 md:px-6 md:py-12">
       <Card className="max-w-2xl mx-auto">
@@ -108,7 +116,10 @@ export default function ProfilePage() {
                 </div>
             )}
           </div>
-          <Button variant="outline" size="sm" onClick={() => signOut()}>Sign Out</Button>
+          <div className="flex justify-end pt-4 space-x-2">
+                <Button variant="secondary" onClick={handleEditProfile}>Edit Profile</Button>
+                <Button variant="outline" onClick={() => signOut()}>Sign Out</Button>
+           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
