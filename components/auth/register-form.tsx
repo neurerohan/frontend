@@ -61,15 +61,35 @@ export function RegisterForm() {
         last_name: values.lastName,
       }
       
-      await api.post('/users/register/', backendData);
+      await api.post('/api/users/register/', backendData);
       
       // Registration successful, redirect to login
       router.push('/auth/login?registered=true'); // Add a query param to show a success message on login page
 
     } catch (err: any) {
       console.error("Registration failed:", err);
-      // Try to parse specific error message from backend
-      const errorMessage = err?.response?.data?.detail || err?.message || 'An unexpected error occurred during registration.';
+      // Try to parse specific error message from backend (will likely be JSON now)
+       let errorMessage = 'An unexpected error occurred during registration.';
+       if (err.response && err.response.data) {
+           // Common DRF error structures:
+           // - {'detail': 'error message'} 
+           // - {'field_name': ['error message']}
+           const errorData = err.response.data;
+           if (errorData.detail) {
+               errorMessage = errorData.detail;
+           } else if (typeof errorData === 'object') {
+               // Grab the first field error message if available
+               const firstKey = Object.keys(errorData)[0];
+               if (firstKey && Array.isArray(errorData[firstKey]) && errorData[firstKey].length > 0) {
+                  errorMessage = `${firstKey}: ${errorData[firstKey][0]}`;
+               } else {
+                  // Fallback for unexpected object structure
+                  errorMessage = JSON.stringify(errorData); 
+               }
+           }
+       } else if (err.message) {
+          errorMessage = err.message;
+       }
       setError(errorMessage);
     } finally {
       setIsLoading(false);
