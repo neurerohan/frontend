@@ -4,7 +4,7 @@ A comprehensive learning platform for Nepali students and professionals, providi
 
 ![Nyure Education Platform](https://placeholder.nyureeducation.com/banner.jpg)
 
-## 🔍 Overview yrr
+## 🔍 Overview
 
 Nyure Education is designed to bridge the education gap in Nepal by providing tailored learning resources, career guidance, and mentorship opportunities. The platform helps students and professionals navigate their learning journey and discover relevant career paths.
 
